@@ -1,4 +1,4 @@
-import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { authClient } from "../auth-client";
 import { useState } from 'react'
 import { userStore } from "#/userStore";
@@ -14,10 +14,12 @@ function RouteComponent() {
   const login = userStore ((state)=> state.login);
   const navigate = useNavigate();
   const validPasswordClass = 'w-75 self-center bg-white border-2 border-cyan-800 rounded m-3 p-0.5 text-black';
-  const invalidPasswordClass = 'w-75 self-center bg-white border-2 border-red-600 rounded m-3 p-0.5 text-black'
+  const invalidPasswordClass = 'w-75 self-center bg-white border-2 border-red-600 rounded m-3 p-0.5 text-black';
+
   if(loading){
     return <div>Signing In</div>
   }
+
   return (<div className="flex flex-col h-screen justify-center content-center text-center">
     <form onSubmit={handleSignUp} className="flex flex-col">
       <h1 className="text-4xl pb-5">Sign Up</h1>
@@ -29,9 +31,6 @@ function RouteComponent() {
       <input type="password" name="password" id="password" className={passwordValid ? validPasswordClass : invalidPasswordClass}/>
       <label htmlFor="confirmPassword">Confirm Password</label>
       <input type="password" name="confirmPassword" id="confirmPassword" className={passwordValid ? validPasswordClass : invalidPasswordClass}/>
-      {/* <div className="text-red-600">
-        {errorMessage ? errorMessage : ''}
-      </div> */}
       {errorMessage.map((m)=>{
         return (<div className="text-red-600">{m}</div>)
       })}

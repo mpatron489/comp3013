@@ -50,7 +50,8 @@ function RouteComponent() {
     await authClient.signIn.email({
       email: email,
       password: password,
-      callbackURL: '/about'
+      callbackURL: '/about',
+      rememberMe: true
     },
     {
       onRequest: (ctx) =>{
