@@ -1,7 +1,6 @@
 import { relations } from 'drizzle-orm'
 import { customType, index, sqliteTable, text, integer } from 'drizzle-orm/sqlite-core'
 
-/** Matches better-auth SQLite migrations: `date` columns store ISO strings. */
 const isoDate = customType<{ data: Date; driverData: string }>({
   dataType: () => 'text',
   fromDriver: (value) => new Date(value),
@@ -70,9 +69,30 @@ export const verification = sqliteTable(
   (table) => [index('verification_identifier_idx').on(table.identifier)],
 )
 
+export const jokes = sqliteTable(
+  'jokes',
+  {
+    id: text('id').primaryKey(),
+    jokeContent: text('jokeContent').notNull(),
+    jokeUserId: text('jokUserId').notNull().references(()=> user.id)
+  }
+)
+
+export const likes = sqliteTable(
+  'likes',
+  {
+    id: text('id').primaryKey(),
+    likeUserId: text('likeUserId').notNull().references(()=> user.id),
+    jokeId: text('jokeId').notNull().references(()=> jokes.id),
+    liked: integer({mode: 'boolean'})
+  }
+)
+
 export const userRelations = relations(user, ({ many }) => ({
   sessions: many(session),
   accounts: many(account),
+  jokes: many(jokes),
+  likes: many(likes)
 }))
 
 export const sessionRelations = relations(session, ({ one }) => ({
@@ -89,12 +109,37 @@ export const accountRelations = relations(account, ({ one }) => ({
   }),
 }))
 
+export const jokeRelations = relations(jokes, ({ one, many }) => ({
+  user: one(user, {
+    fields: [jokes.jokeUserId],
+    references: [user.id],
+  }),
+  likes: many(likes),
+}))
+
+export const likeRelations = relations(likes, ({ one }) => ({
+  joke: one(jokes, {
+    fields: [likes.jokeId],
+    references: [jokes.id],
+  }),
+  user: one(user, {
+    fields: [likes.likeUserId],
+    references: [user.id],
+  }),
+}))
+
+
+
 export const schema = {
   user,
   session,
   account,
   verification,
+  jokes,
+  likes,
   userRelations,
   sessionRelations,
   accountRelations,
+  jokeRelations,
+  likeRelations,
 }

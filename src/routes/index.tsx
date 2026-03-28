@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createServerFn } from "@tanstack/react-start";
+import { db } from '../db'
 
 const getPosts = createServerFn({ method: "GET" }).handler(async () => {
   console.log("Server function was called");
@@ -8,24 +9,34 @@ const getPosts = createServerFn({ method: "GET" }).handler(async () => {
   ) as Promise<{ id: number; title: string }[]>;
 });
 
+const getJokes = createServerFn({ method: 'GET' }).handler(async ()=>{
+  const jokes = await db.query.jokes.findMany({
+    with: {
+      
+    }
+  });
+  return jokes;
+})
+
 export const Route = createFileRoute("/")({
   component: App,
   loader: async () => {
-    const posts = await getPosts();
-    return posts;
+    const jokes = await getJokes();
+    return jokes;
   },
 });
+
 function App() {
-  const posts = Route.useLoaderData();
+  const jokes = Route.useLoaderData();
   return (
     <main className="page-wrap px-4 pb-8 pt-14">
       <div className="mt-8 grid gap-3">
-        {posts.map((post) => (
+        {jokes.map((joke) => (
           <article
-            key={post.id}
+            key={joke.id}
             className="rounded-lg border border-(--line) px-4 py-3"
           >
-            <h2>{post.title}</h2>
+            <h2>{joke.jokeContent}</h2>
           </article>
         ))}
       </div>
