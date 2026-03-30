@@ -1,45 +1,29 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { createServerFn } from "@tanstack/react-start";
-import { db } from '../db'
+import { createFileRoute, redirect } from "@tanstack/react-router"
+import { createServerFn } from "@tanstack/react-start"
+import { getRequest } from "@tanstack/react-start/server"
+import { auth } from "../auth"
+import JokeBin from "../components/JokeBin"
 
-const getPosts = createServerFn({ method: "GET" }).handler(async () => {
-  console.log("Server function was called");
-  return fetch("https://jsonplaceholder.typicode.com/todos").then((response) =>
-    response.json(),
-  ) as Promise<{ id: number; title: string }[]>;
-});
-
-const getJokes = createServerFn({ method: 'GET' }).handler(async ()=>{
-  const jokes = await db.query.jokes.findMany({
-    with: {
-      
-    }
-  });
-  return jokes;
+const getSession = createServerFn({ method: 'GET' }).handler(async () => {
+  const request = getRequest()
+  const session = await auth.api.getSession({ headers: request.headers })
+  return session
 })
 
 export const Route = createFileRoute("/")({
-  component: App,
-  loader: async () => {
-    const jokes = await getJokes();
-    return jokes;
+  beforeLoad: async () => {
+    const session = await getSession()
+    if (!session?.user) {
+      throw redirect({ to: '/signin' })
+    }
   },
-});
+  component: App,
+})
 
 function App() {
-  const jokes = Route.useLoaderData();
   return (
     <main className="page-wrap px-4 pb-8 pt-14">
-      <div className="mt-8 grid gap-3">
-        {jokes.map((joke) => (
-          <article
-            key={joke.id}
-            className="rounded-lg border border-(--line) px-4 py-3"
-          >
-            <h2>{joke.jokeContent}</h2>
-          </article>
-        ))}
-      </div>
+      <JokeBin />
     </main>
-  );
+  )
 }
