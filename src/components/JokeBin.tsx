@@ -3,7 +3,7 @@ import { getRequest } from '@tanstack/react-start/server'
 import { db } from '#/db'
 import { jokes } from '#/db/schema'
 import { auth } from '#/auth'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect} from 'react'
 import type { JokeData } from '#/types'
 import Joke from './Joke'
 
@@ -33,6 +33,7 @@ const getJokes = createServerFn({ method: 'GET' }).handler(async (): Promise<Jok
     currentUserVote: currentUserId
       ? joke.likes.find((l) => l.likeUserId === currentUserId)?.liked ?? null
       : null,
+    isOwner: currentUserId === joke.jokeUserId,
   }))
 })
 
@@ -56,16 +57,19 @@ const addJoke = createServerFn({ method: 'POST' })
       id: crypto.randomUUID(),
       jokeContent: data.jokeContent,
       jokeUserId: session.user.id,
-    })
+    });
+
+
   })
 
 export default function JokeBin() {
   const [jokeList, setJokeList] = useState<JokeData[]>([])
+  const [inputValue, setInputValue] = useState('');
 
-  const fetchJokes = useCallback(async () => {
+  const fetchJokes = async () => {
     const data = await getJokes()
     setJokeList(data)
-  }, [])
+  }
 
   useEffect(() => {
     fetchJokes()
@@ -78,6 +82,7 @@ export default function JokeBin() {
         onSubmit={async (e) => {
           e.preventDefault()
           const formData = new FormData(e.currentTarget)
+          setInputValue('')
           const jokeContent = formData.get('content')?.toString() || ''
           await addJoke({ data: { jokeContent } })
           e.currentTarget.reset()
@@ -86,6 +91,8 @@ export default function JokeBin() {
         className="flex gap-2"
       >
         <input
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
           name="content"
           type="text"
           placeholder="Add a joke..."
@@ -94,13 +101,13 @@ export default function JokeBin() {
         />
         <button
           type="submit"
-          className="rounded-lg bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 transition"
+          className="rounded-lg bg-blue-600 cursor-pointer px-4 py-2 text-white hover:bg-blue-700 transition"
         >
           Add Joke
         </button>
       </form>
       <div className="jokeContainer">
-        {jokeList.map((joke) => (
+        {jokeList.sort((a, b) => b.upvotes - a.upvotes).map((joke) => (
           <Joke key={joke.id} joke={joke} onVoted={fetchJokes} />
         ))}
       </div>

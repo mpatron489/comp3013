@@ -1,8 +1,9 @@
 import { createServerFn } from "@tanstack/react-start"
 import { getRequest } from "@tanstack/react-start/server"
 import { db } from '../db'
-import { likes } from "#/db/schema"
+import { jokes, likes } from "#/db/schema"
 import { auth } from "#/auth"
+import { eq } from "drizzle-orm"
 import type { JokeData } from "../types"
 
 const voteOnJoke = createServerFn({ method: 'POST' })
@@ -29,15 +30,59 @@ const voteOnJoke = createServerFn({ method: 'POST' })
       })
   })
 
+const deleteJoke = createServerFn({ method: 'POST' })
+  .inputValidator((data: unknown) => {
+    const parsed = data as Record<string, unknown>
+    if (typeof parsed?.jokeId !== 'string') {
+      throw new Error('Invalid joke ID')
+    }
+    return { jokeId: parsed.jokeId }
+  })
+  .handler(async ({ data }: { data: { jokeId: string } }) => {
+    const request = getRequest()
+    const session = await auth.api.getSession({ headers: request.headers })
+
+    if (!session?.user) {
+      throw new Error('You must be logged in to delete a joke')
+    }
+
+    const joke = await db.query.jokes.findFirst({
+      where: eq(jokes.id, data.jokeId),
+    })
+
+    if (!joke || joke.jokeUserId !== session.user.id) {
+      throw new Error('You can only delete your own jokes')
+    }
+
+    await db.delete(likes).where(eq(likes.jokeId, data.jokeId))
+    await db.delete(jokes).where(eq(jokes.id, data.jokeId))
+  })
+
 export default function Joke({ joke, onVoted }: { joke: JokeData; onVoted?: () => void }) {
   const handleVote = async (liked: boolean) => {
     await voteOnJoke({ data: { jokeId: joke.id, liked } })
     onVoted?.()
   }
 
+  const handleDelete = async () => {
+    await deleteJoke({ data: { jokeId: joke.id } })
+    onVoted?.()
+  }
+
   return (
     <article className="rounded-lg border border-(--line) px-4 py-3">
-      <p className="text-sm text-gray-500">Posted by {joke.userName}</p>
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-gray-500">Posted by {joke.userName}</p>
+        {joke.isOwner && (
+          <button
+            type="button"
+            onClick={handleDelete}
+            className="rounded-md px-2 py-1 text-xs text-red-600 hover:bg-red-50 transition"
+          >
+            Delete
+          </button>
+        )}
+      </div>
       <h2 className="mt-1 text-lg">{joke.jokeContent}</h2>
       <div className="mt-3 flex items-center gap-3">
         <button

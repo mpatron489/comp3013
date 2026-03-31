@@ -10,4 +10,5 @@ export type JokeData = {
     upvotes: number
     downvotes: number
     currentUserVote: boolean | null
+    isOwner: boolean
 }
