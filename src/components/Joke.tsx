@@ -70,7 +70,7 @@ export default function Joke({ joke, onVoted }: { joke: JokeData; onVoted?: () =
   }
 
   return (
-    <article className="rounded-lg border border-(--line) px-4 py-3">
+    <article className="rounded-lg border-2 px-4 py-3 m-6">
       <div className="flex items-center justify-between">
         <p className="text-sm text-gray-500">Posted by {joke.userName}</p>
         {joke.isOwner && (

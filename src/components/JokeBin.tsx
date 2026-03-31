@@ -77,7 +77,7 @@ export default function JokeBin() {
 
   return (
     <div>
-      <h1>Joke Bin</h1>
+      <h1 className="m-4">Joke Bin</h1>
       <form
         onSubmit={async (e) => {
           e.preventDefault()
@@ -88,7 +88,7 @@ export default function JokeBin() {
           e.currentTarget.reset()
           await fetchJokes()
         }}
-        className="flex gap-2"
+        className="flex gap-2 pb-4"
       >
         <input
           value={inputValue}
@@ -107,8 +107,11 @@ export default function JokeBin() {
         </button>
       </form>
       <div className="jokeContainer">
-        {jokeList.sort((a, b) => b.upvotes - a.upvotes).map((joke) => (
-          <Joke key={joke.id} joke={joke} onVoted={fetchJokes} />
+        {jokeList.sort((a, b) => b.upvotes - a.upvotes).map((joke, index) => (
+          <div>
+            {(index < 3) ? <span>Number {index+1} Joke</span> : ''}
+            <Joke key={joke.id} joke={joke} onVoted={fetchJokes} />
+          </div>
         ))}
       </div>
     </div>
